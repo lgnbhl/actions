@@ -1,10 +1,10 @@
-# Run last commited R script
+# Run last commited R scripts
 on:
   push:
     paths:
       - '**.R'
 
-name: Run last commited R script
+name: Run last commited R scripts
 
 jobs:
   rscripts:
