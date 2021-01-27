@@ -1,0 +1,35 @@
+# Run last commited R script
+on:
+  push:
+    paths:
+      - '**.R'
+
+name: Run last commited R script
+
+jobs:
+  rscripts:
+    runs-on: macOS-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      RENV_PATHS_ROOT: ~/.local/share/renv
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2 # This is important to set for `git diff-tree` to work below
+      - uses: r-lib/actions/setup-r@v1
+      - name: Cache packages
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.RENV_PATHS_ROOT }}
+          key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-renv-
+      - name: Restore packages
+        shell: Rscript {0}
+        run: |
+          if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+          renv::restore()
+      - name: Run R files
+        run: |
+          R_PATH=($(git diff-tree --no-commit-id --name-only -r HEAD | grep '[.]R$'))
+          Rscript -e 'for (file in commandArgs(TRUE)) source(file)' ${R_PATH[*]}
